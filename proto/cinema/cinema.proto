@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package cinema;
+
+import "google/api/annotations.proto";
+import "buf/validate/validate.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "cinema";
+
+// Service definition
+service CinemaService {
+
+  // Configures cinema size and minimum distance between groups
+  rpc ConfigureCinema (ConfigureCinemaRequest) returns (ConfigureCinemaResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/cinema/seat/configure"
+      body: "*"
+    };
+  }
+
+  // Configures cinema size and minimum distance between groups
+  rpc UpdateCinemaConfig (UpdateCinemaConfigRequest) returns (SuccessResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/cinema/seat/configure/{id}"
+      body: "*"
+    };
+  }
+
+  // Queries available seats that can be purchased together
+  rpc GetAvailableSeats (GetAvailableSeatsRequest) returns (GetAvailableSeatsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/cinema/seat/available"
+    };
+  }
+
+  // Reserves specific seats by their (row, column) coordinates
+  rpc ReserveSeats (ReserveSeatsRequest) returns (SuccessResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/cinema/seat/reserve"
+      body: "*"
+    };
+  }
+
+  // Cancels reservation of specific seats by their (row, column) coordinates
+  rpc CancelSeats (CancelSeatsRequest) returns (SuccessResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/cinema/seat/cancel"
+      body: "*"
+    };
+  }
+}
+
+//------------------------------------------------------------
+
+// Message to configure the cinema layout and distancing rules
+message ConfigureCinemaRequest {
+  int32 rows = 1;                      // Number of rows in the cinema
+  int32 columns = 2;                   // Number of columns in the cinema
+  int32 min_distance = 3;              // Minimum Manhattan distance between groups
+}
+
+message UpdateCinemaConfigRequest {
+  int32 rows = 1;                      // Number of rows in the cinema
+  int32 columns = 2;                   // Number of columns in the cinema
+  int32 min_distance = 3;              // Minimum Manhattan distance between groups
+  string id = 4;
+}
+
+// Message for querying available seats
+message GetAvailableSeatsResponse {
+  repeated Seat available_seats = 1;   // List of available seats
+  string grid = 2;
+}
+
+message GetAvailableSeatsRequest {
+  string id = 1;
+}
+
+// Message for reserving seats
+message ReserveSeatsRequest {
+  string id = 1;
+  repeated Seat seat_coords = 2 [(buf.validate.field).repeated.min_items = 1]; // Coordinates of seats to reserve
+}
+
+message SuccessResponse {
+  bool success = 1;                    // Indication if the reservation was successful
+}
+
+// Message for canceling seat reservations
+message CancelSeatsRequest {
+  string id = 1;
+  repeated Seat seat_coords = 2 [(buf.validate.field).repeated.min_items = 1]; // Coordinates of seats to cancel
+}
+
+message ConfigureCinemaResponse {
+  string id = 1;
+}
+
+//------------------------------------------------------------
+
+// Represents a seat by its row and column coordinates
+message Seat {
+  int32 row = 1;                       // Row index (0-based)
+  int32 column = 2;                    // Column index (0-based)
+}

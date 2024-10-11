@@ -1,0 +1,344 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "cinema/cinema.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "CinemaService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/cinema/seat/available": {
+      "get": {
+        "summary": "Queries available seats that can be purchased together",
+        "operationId": "CinemaService_GetAvailableSeats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cinemaGetAvailableSeatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CinemaService"
+        ]
+      }
+    },
+    "/api/v1/cinema/seat/cancel": {
+      "post": {
+        "summary": "Cancels reservation of specific seats by their (row, column) coordinates",
+        "operationId": "CinemaService_CancelSeats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cinemaSuccessResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cinemaCancelSeatsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CinemaService"
+        ]
+      }
+    },
+    "/api/v1/cinema/seat/configure": {
+      "post": {
+        "summary": "Configures cinema size and minimum distance between groups",
+        "operationId": "CinemaService_ConfigureCinema",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cinemaConfigureCinemaResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cinemaConfigureCinemaRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CinemaService"
+        ]
+      }
+    },
+    "/api/v1/cinema/seat/configure/{id}": {
+      "put": {
+        "summary": "Configures cinema size and minimum distance between groups",
+        "operationId": "CinemaService_UpdateCinemaConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cinemaSuccessResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CinemaServiceUpdateCinemaConfigBody"
+            }
+          }
+        ],
+        "tags": [
+          "CinemaService"
+        ]
+      }
+    },
+    "/api/v1/cinema/seat/reserve": {
+      "post": {
+        "summary": "Reserves specific seats by their (row, column) coordinates",
+        "operationId": "CinemaService_ReserveSeats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cinemaSuccessResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cinemaReserveSeatsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CinemaService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "CinemaServiceUpdateCinemaConfigBody": {
+      "type": "object",
+      "properties": {
+        "rows": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Number of rows in the cinema"
+        },
+        "columns": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Number of columns in the cinema"
+        },
+        "minDistance": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Minimum Manhattan distance between groups"
+        }
+      }
+    },
+    "cinemaCancelSeatsRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "seatCoords": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cinemaSeat"
+          },
+          "title": "Coordinates of seats to cancel"
+        }
+      },
+      "title": "Message for canceling seat reservations"
+    },
+    "cinemaConfigureCinemaRequest": {
+      "type": "object",
+      "properties": {
+        "rows": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Number of rows in the cinema"
+        },
+        "columns": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Number of columns in the cinema"
+        },
+        "minDistance": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Minimum Manhattan distance between groups"
+        }
+      },
+      "title": "Message to configure the cinema layout and distancing rules"
+    },
+    "cinemaConfigureCinemaResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "cinemaGetAvailableSeatsResponse": {
+      "type": "object",
+      "properties": {
+        "availableSeats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cinemaSeat"
+          },
+          "title": "List of available seats"
+        },
+        "grid": {
+          "type": "string"
+        }
+      },
+      "title": "Message for querying available seats"
+    },
+    "cinemaReserveSeatsRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "seatCoords": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cinemaSeat"
+          },
+          "title": "Coordinates of seats to reserve"
+        }
+      },
+      "title": "Message for reserving seats"
+    },
+    "cinemaSeat": {
+      "type": "object",
+      "properties": {
+        "row": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Row index (0-based)"
+        },
+        "column": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Column index (0-based)"
+        }
+      },
+      "title": "Represents a seat by its row and column coordinates"
+    },
+    "cinemaSuccessResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "title": "Indication if the reservation was successful"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}
