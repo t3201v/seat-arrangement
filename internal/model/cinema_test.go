@@ -12,10 +12,11 @@ func TestCinema_IsValidGroup(t *testing.T) {
 		rows        int
 		columns     int
 		minDistance int
-		seats       [][]SeatStatus
+		seats       [][]Seat
 	}
 	type args struct {
 		seatCoords [][]int
+		groupName  string
 	}
 	tests := []struct {
 		name   string
@@ -24,99 +25,64 @@ func TestCinema_IsValidGroup(t *testing.T) {
 		want   bool
 	}{
 		{
-			name: "bad arguments",
+			name: "pass /w same group",
 			fields: fields{
 				logger:      log.StandardLogger(),
 				rows:        4,
 				columns:     5,
 				minDistance: 7,
-				seats: [][]SeatStatus{
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
+				seats: [][]Seat{
+					{{0, ""}, {0, ""}, {0, ""}, {0, ""}, {0, ""}},
+					{{0, ""}, {0, ""}, {0, ""}, {0, ""}, {0, ""}},
+					{{0, ""}, {0, ""}, {0, ""}, {0, ""}, {0, ""}},
+					{{0, ""}, {0, ""}, {0, ""}, {0, ""}, {0, ""}},
 				},
 			},
 			args: args{
 				seatCoords: [][]int{{0, 0}, {3, 4}},
-			},
-			want: false,
-		},
-		{
-			name: "existed seat and farthest invalid reservation seat",
-			fields: fields{
-				logger:      log.StandardLogger(),
-				rows:        4,
-				columns:     5,
-				minDistance: 7,
-				seats: [][]SeatStatus{
-					{1, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-				},
-			},
-			args: args{
-				seatCoords: [][]int{{3, 4}},
-			},
-			want: false,
-		},
-		{
-			name: "already reserved",
-			fields: fields{
-				logger:      log.StandardLogger(),
-				rows:        4,
-				columns:     5,
-				minDistance: 7,
-				seats: [][]SeatStatus{
-					{1, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 1},
-				},
-			},
-			args: args{
-				seatCoords: [][]int{{3, 4}},
-			},
-			want: false,
-		},
-		{
-			name: "existed seat and invalid reservation",
-			fields: fields{
-				logger:      log.StandardLogger(),
-				rows:        4,
-				columns:     5,
-				minDistance: 7,
-				seats: [][]SeatStatus{
-					{0, 0, 0, 0, 0},
-					{0, 1, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-				},
-			},
-			args: args{
-				seatCoords: [][]int{{3, 4}},
-			},
-			want: false,
-		},
-		{
-			name: "pass",
-			fields: fields{
-				logger:      log.StandardLogger(),
-				rows:        4,
-				columns:     5,
-				minDistance: 6,
-				seats: [][]SeatStatus{
-					{1, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-					{0, 0, 0, 0, 0},
-				},
-			},
-			args: args{
-				seatCoords: [][]int{{3, 4}},
+				groupName:  "pass",
 			},
 			want: true,
+		},
+		{
+			name: "fail bc different groups and not met min distance",
+			fields: fields{
+				logger:      log.StandardLogger(),
+				rows:        4,
+				columns:     5,
+				minDistance: 7,
+				seats: [][]Seat{
+					{{1, "a"}, {0, ""}, {0, ""}, {0, ""}, {0, ""}},
+					{{0, ""}, {0, ""}, {0, ""}, {0, ""}, {0, ""}},
+					{{0, ""}, {0, ""}, {0, ""}, {0, ""}, {0, ""}},
+					{{0, ""}, {0, ""}, {0, ""}, {0, ""}, {0, ""}},
+				},
+			},
+			args: args{
+				seatCoords: [][]int{{3, 4}},
+				groupName:  "b",
+			},
+			want: false,
+		},
+		{
+			name: "fail bc buying reserved seat",
+			fields: fields{
+				logger:      log.StandardLogger(),
+				rows:        4,
+				columns:     5,
+				minDistance: 7,
+				seats: [][]Seat{
+					{{1, "a"}, {0, ""}, {0, ""}, {0, ""}, {0, ""}},
+					{{0, ""}, {0, ""}, {0, ""}, {0, ""}, {0, ""}},
+					{{0, ""}, {0, ""}, {0, ""}, {0, ""}, {0, ""}},
+					{{0, ""}, {0, ""}, {0, ""}, {0, ""}, {1, ""}},
+				},
+			},
+			args: args{
+				seatCoords: [][]int{{3, 4}},
+				groupName:  "a",
+			},
+			want: false,
 		},
 	}
 	for _, tt := range tests {
@@ -128,7 +94,7 @@ func TestCinema_IsValidGroup(t *testing.T) {
 				minDistance: tt.fields.minDistance,
 				seats:       tt.fields.seats,
 			}
-			if got := c.IsValidGroup(tt.args.seatCoords); got != tt.want {
+			if got := c.IsValidGroup(tt.args.seatCoords, tt.args.groupName); got != tt.want {
 				t.Errorf("IsValidGroup() = %v, want %v", got, tt.want)
 			}
 		})

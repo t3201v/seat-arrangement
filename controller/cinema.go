@@ -46,7 +46,14 @@ func (c *Cinema) GetAvailableSeats(ctx context.Context, request *cinema.GetAvail
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	result, err := new(model.Cinema).ToPbSeats(data)
+	if len(data) == 0 {
+		return &cinema.GetAvailableSeatsResponse{}, nil
+	}
+	if int(request.SetOffset) < 0 || int(request.SetOffset) >= len(data) {
+		return nil, status.Error(codes.OutOfRange, "offset out of range")
+	}
+
+	result, err := new(model.Cinema).ToPbSeats(data[request.SetOffset])
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

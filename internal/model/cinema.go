@@ -30,20 +30,25 @@ var directions = [][]int{
 	{0, 1},  // right
 }
 
+type Seat struct {
+	status    SeatStatus
+	groupName string
+}
+
 // Cinema structure to hold seat information and minimum distance rule
 type Cinema struct {
 	logger      *log.Logger
 	rows        int
 	columns     int
 	minDistance int
-	seats       [][]SeatStatus // 0: available, 1: reserved
+	seats       [][]Seat // 0: available, 1: reserved
 }
 
 // NewCinema initializes the cinema layout with the given rows, columns, and min_distance
 func NewCinema(l *log.Logger, rows, columns, minDistance int) *Cinema {
-	seats := make([][]SeatStatus, rows)
+	seats := make([][]Seat, rows)
 	for i := range seats {
-		seats[i] = make([]SeatStatus, columns)
+		seats[i] = make([]Seat, columns)
 	}
 	return &Cinema{
 		logger:      l,
@@ -86,7 +91,7 @@ func (c *Cinema) UpdateConfig(rows, columns, minDistance int) {
 }
 
 // IsValidGroup checks if a group of seats can be reserved together
-func (c *Cinema) IsValidGroup(seatCoords [][]int) bool {
+func (c *Cinema) IsValidGroup(seatCoords [][]int, groupName string) bool {
 	if err := c.validate(seatCoords); err != nil {
 		return false
 	}
@@ -94,20 +99,9 @@ func (c *Cinema) IsValidGroup(seatCoords [][]int) bool {
 		return false
 	}
 
-	// Check all pairs of seats in the group
-	for i := 0; i < len(seatCoords); i++ {
-		for j := i + 1; j < len(seatCoords); j++ {
-			// Calculate Manhattan distance
-			distance := helper.ManhattanDistance(seatCoords[i][Row], seatCoords[i][Col], seatCoords[j][Row], seatCoords[j][Col])
-			if distance <= c.minDistance {
-				return false // Not satisfying the minimum distance rule
-			}
-		}
-	}
-
 	// Check if the group contains any reserved seats
 	for _, seat := range seatCoords {
-		if c.seats[seat[Row]][seat[Col]] == Reserved {
+		if c.seats[seat[Row]][seat[Col]].status == Reserved {
 			return false // Seat is already reserved
 		}
 	}
@@ -115,11 +109,13 @@ func (c *Cinema) IsValidGroup(seatCoords [][]int) bool {
 	// Check if the group satisfies the minimum distance rule
 	for i := 0; i < c.rows; i++ {
 		for j := 0; j < c.columns; j++ {
-			if c.seats[i][j] == Reserved { // Already reserved seat or to be reserved seat
-				for _, seat := range seatCoords {
-					if helper.ManhattanDistance(i, j, seat[Row], seat[Col]) <= c.minDistance {
-						return false
-					}
+			if c.seats[i][j].status != Reserved || c.seats[i][j].groupName == groupName {
+				continue
+			}
+			// check minimum distance for different groups of seats
+			for _, seat := range seatCoords {
+				if helper.ManhattanDistance(i, j, seat[Row], seat[Col]) <= c.minDistance {
+					return false
 				}
 			}
 		}
@@ -128,16 +124,17 @@ func (c *Cinema) IsValidGroup(seatCoords [][]int) bool {
 }
 
 // ReserveSeats attempts to reserve seats if they are valid according to the distance rule
-func (c *Cinema) ReserveSeats(seatCoords [][]int) error {
+func (c *Cinema) ReserveSeats(seatCoords [][]int, groupName string) error {
 	if err := c.validate(seatCoords); err != nil {
 		return err
 	}
 
-	if !c.IsValidGroup(seatCoords) {
-		return errors.New("seats cannot be reserved due to minimum distance rule")
+	if !c.IsValidGroup(seatCoords, groupName) {
+		return errors.New("seats are not available right now")
 	}
 	for _, seat := range seatCoords {
-		c.seats[seat[Row]][seat[Col]] = Reserved
+		c.seats[seat[Row]][seat[Col]].status = Reserved
+		c.seats[seat[Row]][seat[Col]].groupName = groupName
 	}
 	return nil
 }
@@ -149,15 +146,15 @@ func (c *Cinema) CancelSeats(seatCoords [][]int) error {
 	}
 
 	for _, seat := range seatCoords {
-		if c.seats[seat[Row]][seat[Col]] == Available {
+		if c.seats[seat[Row]][seat[Col]].status == Available {
 			return fmt.Errorf("seat (%d, %d) is not reserved", seat[Row], seat[Col])
 		}
-		c.seats[seat[Row]][seat[Col]] = Available
+		c.seats[seat[Row]][seat[Col]].status = Available
+		c.seats[seat[Row]][seat[Col]].groupName = ""
 	}
 	return nil
 }
 
-// TODO: write unit tests
 // ListAvailableSeatsGrouped returns groups of available seats that can be purchased together
 func (c *Cinema) ListAvailableSeatsGrouped() [][][]int {
 	availableGroups := make([][][]int, 0)
@@ -169,13 +166,16 @@ func (c *Cinema) ListAvailableSeatsGrouped() [][][]int {
 	}
 
 	// Helper function for BFS/DFS to explore available seats
-	var dfs func(int, int, *[][]int)
-	dfs = func(row, col int, group *[][]int) {
+	var dfs func(int, int, string, *[][]int)
+	dfs = func(row, col int, groupName string, group *[][]int) {
 		// Mark the seat as visited
 		visited[row][col] = true
 
-		// Check if this seat is valid based on Manhattan distance with every seat in the group
+		// Check if this seat is valid based on Manhattan distance
 		for _, seat := range *group {
+			if c.seats[seat[Row]][seat[Col]].groupName == groupName {
+				continue
+			}
 			if helper.ManhattanDistance(seat[Row], seat[Col], row, col) <= c.minDistance {
 				return // If the seat violates the min distance, don't add it to the group
 			}
@@ -192,8 +192,8 @@ func (c *Cinema) ListAvailableSeatsGrouped() [][][]int {
 				newCol >= 0 &&
 				newCol < c.columns &&
 				!visited[newRow][newCol] &&
-				c.seats[newRow][newCol] == Available {
-				dfs(newRow, newCol, group)
+				c.seats[newRow][newCol].status == Available {
+				dfs(newRow, newCol, c.seats[newRow][newCol].groupName, group)
 			}
 		}
 	}
@@ -202,9 +202,9 @@ func (c *Cinema) ListAvailableSeatsGrouped() [][][]int {
 	for i := 0; i < c.rows; i++ {
 		for j := 0; j < c.columns; j++ {
 			// If the seat is available and not yet visited, explore its group
-			if c.seats[i][j] == Available && !visited[i][j] {
+			if c.seats[i][j].status == Available && !visited[i][j] {
 				group := make([][]int, 0)
-				dfs(i, j, &group)
+				dfs(i, j, c.seats[i][j].groupName, &group)
 				availableGroups = append(availableGroups, group)
 			}
 		}
@@ -233,7 +233,7 @@ func (c *Cinema) String() string {
 
 	for i, row := range c.seats {
 		for j, val := range row {
-			sb.WriteString(fmt.Sprintf("%d", val))
+			sb.WriteString(fmt.Sprintf("%d", val.status))
 			if j < len(row)-1 {
 				sb.WriteString(" ") // Add a space between numbers in the same row
 			}
@@ -253,12 +253,12 @@ func (c *Cinema) Clone() *Cinema {
 		rows:        c.rows,
 		columns:     c.columns,
 		minDistance: c.minDistance,
-		seats:       make([][]SeatStatus, len(c.seats)),
+		seats:       make([][]Seat, len(c.seats)),
 	}
 
 	// Deep copy of the seats slice
 	for i := range c.seats {
-		newCinema.seats[i] = make([]SeatStatus, len(c.seats[i]))
+		newCinema.seats[i] = make([]Seat, len(c.seats[i]))
 		copy(newCinema.seats[i], c.seats[i]) // Copy the seat statuses row by row
 	}
 

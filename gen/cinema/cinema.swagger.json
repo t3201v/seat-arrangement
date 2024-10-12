@@ -40,6 +40,13 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "setOffset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
           }
         ],
         "tags": [
@@ -283,6 +290,9 @@
             "$ref": "#/definitions/cinemaSeat"
           },
           "title": "Coordinates of seats to reserve"
+        },
+        "groupName": {
+          "type": "string"
         }
       },
       "title": "Message for reserving seats"

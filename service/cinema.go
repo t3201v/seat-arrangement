@@ -14,7 +14,7 @@ import (
 type ICinema interface {
 	ConfigureCinema(ctx context.Context, request *cinema.ConfigureCinemaRequest) (string, error)
 	UpdateCinemaConfig(ctx context.Context, request *cinema.UpdateCinemaConfigRequest) error
-	GetAvailableSeats(ctx context.Context, request *cinema.GetAvailableSeatsRequest) ([][]int, string, error)
+	GetAvailableSeats(ctx context.Context, request *cinema.GetAvailableSeatsRequest) ([][][]int, string, error)
 	ReserveSeats(ctx context.Context, request *cinema.ReserveSeatsRequest) error
 	CancelSeats(ctx context.Context, request *cinema.CancelSeatsRequest) error
 }
@@ -53,7 +53,7 @@ func (c *Cinema) UpdateCinemaConfig(ctx context.Context, request *cinema.UpdateC
 	return nil
 }
 
-func (c *Cinema) GetAvailableSeats(ctx context.Context, request *cinema.GetAvailableSeatsRequest) ([][]int, string, error) {
+func (c *Cinema) GetAvailableSeats(ctx context.Context, request *cinema.GetAvailableSeatsRequest) ([][][]int, string, error) {
 	entity, err := c.repo.GetCinema(request.Id)
 	if err != nil {
 		c.logger.Error(err)
@@ -62,7 +62,7 @@ func (c *Cinema) GetAvailableSeats(ctx context.Context, request *cinema.GetAvail
 	if entity == nil {
 		return nil, "", fmt.Errorf("not found id %s", request.Id)
 	}
-	return entity.ListAvailableSeats(), entity.String(), nil
+	return entity.ListAvailableSeatsGrouped(), entity.String(), nil
 }
 
 func (c *Cinema) ReserveSeats(ctx context.Context, request *cinema.ReserveSeatsRequest) error {
@@ -82,7 +82,7 @@ func (c *Cinema) ReserveSeats(ctx context.Context, request *cinema.ReserveSeatsR
 		}
 		seats = append(seats, []int{int(seat.Row), int(seat.Column)})
 	}
-	err = entity.ReserveSeats(seats)
+	err = entity.ReserveSeats(seats, request.GroupName)
 	if err != nil {
 		c.logger.Error(err)
 		return err
