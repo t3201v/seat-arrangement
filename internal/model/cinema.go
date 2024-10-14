@@ -156,56 +156,12 @@ func (c *Cinema) CancelSeats(seatCoords [][]int) error {
 }
 
 // ListAvailableSeatsGrouped returns groups of available seats that can be purchased together
-func (c *Cinema) ListAvailableSeatsGrouped() [][][]int {
-	availableGroups := make([][][]int, 0)
-	visited := make([][]bool, c.rows)
-
-	// Initialize visited 2D slice
-	for i := range visited {
-		visited[i] = make([]bool, c.columns)
-	}
-
-	// Helper function for BFS/DFS to explore available seats
-	var dfs func(int, int, string, *[][]int)
-	dfs = func(row, col int, groupName string, group *[][]int) {
-		// Mark the seat as visited
-		visited[row][col] = true
-
-		// Check if this seat is valid based on Manhattan distance
-		for _, seat := range *group {
-			if c.seats[seat[Row]][seat[Col]].groupName == groupName {
-				continue
-			}
-			if helper.ManhattanDistance(seat[Row], seat[Col], row, col) <= c.minDistance {
-				return // If the seat violates the min distance, don't add it to the group
-			}
-		}
-
-		// Add the seat to the current group
-		*group = append(*group, []int{row, col})
-
-		// Explore adjacent seats (Manhattan distance = 1)
-		for _, dir := range directions {
-			newRow, newCol := row+dir[Row], col+dir[Col]
-			if newRow >= 0 &&
-				newRow < c.rows &&
-				newCol >= 0 &&
-				newCol < c.columns &&
-				!visited[newRow][newCol] &&
-				c.seats[newRow][newCol].status == Available {
-				dfs(newRow, newCol, c.seats[newRow][newCol].groupName, group)
-			}
-		}
-	}
-
-	// Loop through the seating chart
+func (c *Cinema) ListAvailableSeatsGrouped() [][]int {
+	availableGroups := make([][]int, 0)
 	for i := 0; i < c.rows; i++ {
 		for j := 0; j < c.columns; j++ {
-			// If the seat is available and not yet visited, explore its group
-			if c.seats[i][j].status == Available && !visited[i][j] {
-				group := make([][]int, 0)
-				dfs(i, j, c.seats[i][j].groupName, &group)
-				availableGroups = append(availableGroups, group)
+			if c.seats[i][j].status == Available {
+				availableGroups = append(availableGroups, []int{i, j})
 			}
 		}
 	}

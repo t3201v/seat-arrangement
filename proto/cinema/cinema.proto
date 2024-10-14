@@ -75,7 +75,6 @@ message GetAvailableSeatsResponse {
 
 message GetAvailableSeatsRequest {
   string id = 1;
-  int32 set_offset = 2;
 }
 
 // Message for reserving seats

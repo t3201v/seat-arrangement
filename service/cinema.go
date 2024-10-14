@@ -14,7 +14,7 @@ import (
 type ICinema interface {
 	ConfigureCinema(ctx context.Context, request *cinema.ConfigureCinemaRequest) (string, error)
 	UpdateCinemaConfig(ctx context.Context, request *cinema.UpdateCinemaConfigRequest) error
-	GetAvailableSeats(ctx context.Context, request *cinema.GetAvailableSeatsRequest) ([][][]int, string, error)
+	GetAvailableSeats(ctx context.Context, request *cinema.GetAvailableSeatsRequest) ([][]int, string, error)
 	ReserveSeats(ctx context.Context, request *cinema.ReserveSeatsRequest) error
 	CancelSeats(ctx context.Context, request *cinema.CancelSeatsRequest) error
 }
@@ -53,7 +53,7 @@ func (c *Cinema) UpdateCinemaConfig(ctx context.Context, request *cinema.UpdateC
 	return nil
 }
 
-func (c *Cinema) GetAvailableSeats(ctx context.Context, request *cinema.GetAvailableSeatsRequest) ([][][]int, string, error) {
+func (c *Cinema) GetAvailableSeats(ctx context.Context, request *cinema.GetAvailableSeatsRequest) ([][]int, string, error) {
 	entity, err := c.repo.GetCinema(request.Id)
 	if err != nil {
 		c.logger.Error(err)
